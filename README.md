@@ -1,3 +1,4 @@
+通过修改UDS模块，优化了对扩展帧探测范围，可以使用cc.py uds discovery -E和cc.py uds auto -E 进行UDS扩展帧的诊断id探测和自动扫描
 # Caring Caribou
 A friendly automotive security exploration tool.
 

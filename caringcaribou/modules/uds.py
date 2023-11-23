@@ -1,7 +1,32 @@
+'''
+module_template.py
+
+This file contains a template for a simple CaringCaribou module.
+The module's entry point is the 'module_main' function.
+
+Steps to add this module to CaringCaribou and run it:
+
+1. Copy this template into the `caringcaribou/modules` directory:
+
+    $ cp module_template.py my_module.py
+
+2. In `setup.py`, add an entry under `caringcaribou.modules`, 
+   referencing your new module like:
+   `my_module = caringcaribou.modules.my_module`  
+
+3. Run: `setup.py install`
+
+4. Verify that the module is available,
+   it should be listed in the output of `cc.py -h`
+
+5. Run the following command to run module and show usage instructions:
+
+    $ cc.py my_module -h
+'''
 from __future__ import print_function
 from caringcaribou.utils.can_actions import auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
-from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED
+from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED,ARBITRATION_ID_MIN_EXTENDED
 from caringcaribou.utils.constants import ARBITRATION_ID_MIN
 from caringcaribou.utils.iso15765_2 import IsoTp
 from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
@@ -109,7 +134,7 @@ DUMP_DID_MAX = 0xFFFF
 DUMP_DID_TIMEOUT = 0.2
 
 
-def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
+def uds_discovery(E, min_id, max_id, blacklist_args, auto_blacklist_duration,
                   delay, verify, print_results=True):
     """Scans for diagnostics support by brute forcing session control
         messages to different arbitration IDs.
@@ -135,14 +160,15 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
     :rtype [(int, int)]
     """
     # Set defaults
-    if min_id is None:
+
+    #-E为扩展帧
+    if E:   
+        max_id = ARBITRATION_ID_MAX_EXTENDED
+        min_id = ARBITRATION_ID_MIN_EXTENDED
+    elif min_id is None:
         min_id = ARBITRATION_ID_MIN
-    if max_id is None:
-        if min_id <= ARBITRATION_ID_MAX:
-            max_id = ARBITRATION_ID_MAX
-        else:
-            # If min_id is extended, use an extended default max_id as well
-            max_id = ARBITRATION_ID_MAX_EXTENDED
+        max_id = ARBITRATION_ID_MAX
+            
     if auto_blacklist_duration is None:
         auto_blacklist_duration = 0
     if blacklist_args is None:
@@ -181,9 +207,15 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
 
         # Prepare session control frame
         sess_ctrl_frm = tp.get_frames_from_message(session_control_data)
-        send_arb_id = min_id - 1
+        if E is None:
+            temp = 1
+        else:
+            temp = 0x100
+
+        send_arb_id = min_id - temp
+
         while send_arb_id < max_id:
-            send_arb_id += 1
+            send_arb_id += temp
             if print_results:
                 print("\rSending Diagnostic Session Control to 0x{0:04x}"
                       .format(send_arb_id), end="")
@@ -280,6 +312,7 @@ def uds_discovery(min_id, max_id, blacklist_args, auto_blacklist_duration,
 
 def __uds_discovery_wrapper(args):
     """Wrapper used to initiate a UDS discovery scan"""
+    E=args.E
     min_id = args.min
     max_id = args.max
     blacklist = args.blacklist
@@ -289,7 +322,7 @@ def __uds_discovery_wrapper(args):
     print_results = True
 
     try:
-        arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
+        arb_id_pairs = uds_discovery(E, min_id, max_id, blacklist,
                                      auto_blacklist_duration,
                                      delay, verify, print_results)
         if len(arb_id_pairs) == 0:
@@ -823,6 +856,7 @@ def __dump_dids_wrapper(args):
 
 def __auto_wrapper(args):
     """Wrapper used to initiate automated UDS scan"""
+    E=args.E
     min_id = args.min
     max_id = args.max
     blacklist = args.blacklist
@@ -835,7 +869,7 @@ def __auto_wrapper(args):
     max_did = args.max_did
 
     try:
-        arb_id_pairs = uds_discovery(min_id, max_id, blacklist,
+        arb_id_pairs = uds_discovery(E, min_id, max_id, blacklist,
                                      auto_blacklist_duration,
                                      delay, verify, print_results)
 
@@ -1089,12 +1123,13 @@ def dump_dids(arb_id_request, arb_id_response, timeout,
 def __parse_args(args):
     """Parser for module arguments"""
     parser = argparse.ArgumentParser(
-        prog="cc.py uds",
+        prog="cc.py uds-ext",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Universal Diagnostic Services module for "
                     "CaringCaribou",
         epilog="""Example usage:
   cc.py uds discovery
+  cc.py uds discovery -E
   cc.py uds discovery -blacklist 0x123 0x456
   cc.py uds discovery -autoblacklist 10
   cc.py uds services 0x733 0x633
@@ -1102,12 +1137,18 @@ def __parse_args(args):
   cc.py uds testerpresent 0x733
   cc.py uds security_seed 0x3 0x1 0x733 0x633 -r 1 -d 0.5
   cc.py uds dump_dids 0x733 0x633
-  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1""")
+  cc.py uds dump_dids 0x733 0x633 --min_did 0x6300 --max_did 0x6fff -t 0.1
+  cc.py uds auto -E""")
     subparsers = parser.add_subparsers(dest="module_function")
     subparsers.required = True
 
     # Parser for diagnostics discovery
     parser_discovery = subparsers.add_parser("discovery")
+    parser_discovery.add_argument("-E",
+                                  nargs="?", default=None,
+                                  help="arbitration ID Extend "
+                                       "to send request for",
+                                const=True)                                  
     parser_discovery.add_argument("-min",
                                   type=parse_int_dec_or_hex, default=None,
                                   help="min arbitration ID "
@@ -1278,6 +1319,12 @@ def __parse_args(args):
     parser_did.set_defaults(func=__dump_dids_wrapper)
 
     parser_auto = subparsers.add_parser("auto")
+
+    parser_auto.add_argument("-E",
+                                  nargs="?", default=None,
+                                  help="arbitration ID Extend "
+                                       "to send request for",
+                                const=True) 
     parser_auto.add_argument("-min",
                              type=parse_int_dec_or_hex, default=None,
                              help="min arbitration ID "

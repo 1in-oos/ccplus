@@ -1318,7 +1318,8 @@ def __parse_args(args):
     parser_did.set_defaults(func=__dump_dids_wrapper)
 
     parser_auto = subparsers.add_parser("auto")
-    parser_discovery.add_argument("-E",
+
+    parser_auto.add_argument("-E",
                                   nargs="?", default=None,
                                   help="arbitration ID Extend "
                                        "to send request for",

@@ -207,12 +207,15 @@ def uds_discovery(E, min_id, max_id, blacklist_args, auto_blacklist_duration,
 
         # Prepare session control frame
         sess_ctrl_frm = tp.get_frames_from_message(session_control_data)
-        send_arb_id = min_id - 1
+        if E is None:
+            temp = 1
+        else:
+            temp = 0x100
+
+        send_arb_id = min_id - temp
+
         while send_arb_id < max_id:
-            if E is None:
-                send_arb_id += 1
-            else:
-                send_arb_id += 0x100
+            send_arb_id += temp
             if print_results:
                 print("\rSending Diagnostic Session Control to 0x{0:04x}"
                       .format(send_arb_id), end="")
@@ -853,6 +856,7 @@ def __dump_dids_wrapper(args):
 
 def __auto_wrapper(args):
     """Wrapper used to initiate automated UDS scan"""
+    E=args.E
     min_id = args.min
     max_id = args.max
     blacklist = args.blacklist
@@ -1314,6 +1318,11 @@ def __parse_args(args):
     parser_did.set_defaults(func=__dump_dids_wrapper)
 
     parser_auto = subparsers.add_parser("auto")
+    parser_discovery.add_argument("-E",
+                                  nargs="?", default=None,
+                                  help="arbitration ID Extend "
+                                       "to send request for",
+                                const=True) 
     parser_auto.add_argument("-min",
                              type=parse_int_dec_or_hex, default=None,
                              help="min arbitration ID "

@@ -209,7 +209,10 @@ def uds_discovery(E, min_id, max_id, blacklist_args, auto_blacklist_duration,
         sess_ctrl_frm = tp.get_frames_from_message(session_control_data)
         send_arb_id = min_id - 1
         while send_arb_id < max_id:
-            send_arb_id += 1
+            if E is None:
+                send_arb_id += 1
+            else:
+                send_arb_id += 0x100
             if print_results:
                 print("\rSending Diagnostic Session Control to 0x{0:04x}"
                       .format(send_arb_id), end="")

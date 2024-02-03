@@ -26,8 +26,8 @@ Steps to add this module to CaringCaribou and run it:
 from __future__ import print_function
 from caringcaribou.utils.can_actions import auto_blacklist
 from caringcaribou.utils.common import list_to_hex_str, parse_int_dec_or_hex
-from caringcaribou.utils.constants import ARBITRATION_ID_MAX, ARBITRATION_ID_MAX_EXTENDED,ARBITRATION_ID_MIN_EXTENDED
-from caringcaribou.utils.constants import ARBITRATION_ID_MIN
+from caringcaribou.utils.constants import DIAGNOSTICS_ID_MIN, DIAGNOSTICS_ID_MAX
+from caringcaribou.utils.constants import DIAGNOSTICS_ID_MIN_EXTENDED, DIAGNOSTICS_ID_MAX_EXTENDED
 from caringcaribou.utils.iso15765_2 import IsoTp
 from caringcaribou.utils.iso14229_1 import Constants, Iso14229_1, NegativeResponseCodes, Services, ServiceID
 from sys import stdout, version_info, stderr
@@ -163,11 +163,11 @@ def uds_discovery(E, min_id, max_id, blacklist_args, auto_blacklist_duration,
 
     #-E为扩展帧
     if E:   
-        max_id = ARBITRATION_ID_MAX_EXTENDED
-        min_id = ARBITRATION_ID_MIN_EXTENDED
+        max_id = DIAGNOSTICS_ID_MAX_EXTENDED
+        min_id = DIAGNOSTICS_ID_MIN_EXTENDED
     elif min_id is None:
-        min_id = ARBITRATION_ID_MIN
-        max_id = ARBITRATION_ID_MAX
+        min_id = DIAGNOSTICS_ID_MIN
+        max_id = DIAGNOSTICS_ID_MAX
             
     if auto_blacklist_duration is None:
         auto_blacklist_duration = 0

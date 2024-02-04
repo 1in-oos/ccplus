@@ -49,6 +49,7 @@ setup(
             "uds_fuzz = caringcaribou.modules.uds_fuzz",
             "uds = caringcaribou.modules.uds",
             "xcp = caringcaribou.modules.xcp",
+            "tester = caringcaribou.modules.secure_test.py",
         ]
     }
 )
